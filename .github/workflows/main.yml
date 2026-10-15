@@ -1,0 +1,53 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Compile iOS IPA on Mac Cloud
+    runs-on: macos-14
+    steps:
+      - name: 1. Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 2. Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 3. Install Capacitor Dependencies
+        run: npm install
+
+      - name: 4. Add & Sync iOS Native Platform
+        run: |
+          npx cap add ios
+          npx cap sync ios
+
+      - name: 5. Build iOS App with Xcode
+        run: |
+          cd ios/App
+          xcodebuild build \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: 6. Package into .IPA
+        run: |
+          mkdir -p Payload
+          cp -r ios/App/build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -r Flappy-Philippot.ipa Payload
+
+      - name: 7. Upload .IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Flappy-Philippot-iOS
+          path: Flappy-Philippot.ipa
+          retention-days: 14
