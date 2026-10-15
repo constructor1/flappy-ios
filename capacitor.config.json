@@ -1,0 +1,9 @@
+{
+  "appId": "com.philippot.flappy",
+  "appName": "Flappy Philippot",
+  "webDir": "www",
+  "server": {
+    "cleartext": true,
+    "androidScheme": "http"
+  }
+}

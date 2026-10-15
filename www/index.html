@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Flappy Philippot</title>
+    <link rel="icon" type="image/png" href="visage.png">
+    <link rel="apple-touch-icon" href="visage.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Flappy Philippot">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="game-wrapper">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- In-game HUD -->
+    <div id="hud">
+        <div id="online-counter" class="hud-pill">
+            <span id="network-status" class="status-dot"></span>
+            <span id="online-text">1 en vol</span>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <button id="soundToggleBtn" class="hud-btn" title="Son">🔊</button>
+            <button id="settingsBtn" class="hud-btn" title="Paramètres">⚙️</button>
+        </div>
+    </div>
+
+    <div id="score-display">0</div>
+    <div id="event-toast"></div>
+
+    <!-- Start Screen -->
+    <div id="startScreen" class="ui-layer">
+        <h1>Flappy<br><span>Philippot</span></h1>
+        
+        <input type="text" id="playerPseudo" placeholder="Entre ton pseudo" maxlength="15" autocomplete="off">
+        
+        <div class="diff-container">
+            <button class="diff-btn" id="btn-facile">Facile</button>
+            <button class="diff-btn active" id="btn-normal">Normal</button>
+            <button class="diff-btn" id="btn-difficile">Dur</button>
+            <button class="diff-btn" id="btn-hardcore">Hardcore 💀</button>
+        </div>
+
+        <div class="avatar-section">
+            <div class="img-container" id="avatarPreviewContainer">
+                <img id="avatarImg" src="visage.png" alt="Philippot" onerror="this.src='visage.png'">
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; width: 75%; max-width: 280px; align-items: center; margin-top: 15px;">
+            <button id="startBtn" style="margin: 0; width: 100%;">JOUER</button>
+            <button id="homeLeaderboardBtn">🏆 PALMARÈS</button>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="ui-layer hidden">
+        <h1 style="color: #ef4444; font-size: 38px;">Game Over</h1>
+        <div class="img-container" style="filter: grayscale(100%); border-color: #ef4444; margin: 12px auto;">
+            <img id="deadAvatarImg" src="visage.png" alt="Philippot">
+        </div>
+        <div style="background: #334155; padding: 12px 20px; border-radius: 12px; margin: 8px 0; width: 75%; max-width: 260px; border: 2px solid #475569;">
+            <p style="margin: 3px 0; font-size: 20px; color: #facc15; font-weight: bold;">Score: <span id="finalScore" style="color:white;">0</span></p>
+            <p id="bestScoreText" style="margin: 3px 0; font-size: 13px; color: #94a3b8;">Record perso : <span id="bestScoreVal" style="color:#e2e8f0; font-weight:bold;">0</span></p>
+        </div>
+        <div style="display: flex; gap: 10px; width: 85%; max-width: 300px; justify-content: center; margin-top: 6px;">
+            <button id="restartBtn" style="flex: 1; font-size: 15px; padding: 10px 14px; margin: 0;">REJOUER</button>
+            <button id="showLeaderboardBtn" style="flex: 1; font-size: 15px; padding: 10px 14px; margin: 0;">CLASSEMENT</button>
+        </div>
+    </div>
+
+    <!-- End of Match Leaderboard -->
+    <div id="leaderboardScreen" class="ui-layer hidden">
+        <div style="width: 90%; max-width: 380px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <button class="back-btn" id="closeLeaderboardBtn">⬅</button>
+            <h2 style="color: #facc15; margin: 0; flex-grow: 1; text-align: center; font-size: 20px; padding-right: 46px;">Top 10 - <span id="lb-diff-label">Normal</span></h2>
+        </div>
+        <div id="leaderboard-modal">
+            <div id="loading-text" style="color: white;">Chargement...</div>
+            <div id="leaderboard-list" style="width: 100%;"></div>
+        </div>
+    </div>
+
+    <!-- Global Palmarès Screen -->
+    <div id="generalLeaderboardScreen" class="ui-layer hidden">
+        <div style="width: 90%; max-width: 380px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <button class="back-btn" id="closeGeneralLeaderboardBtn">⬅</button>
+            <h2 style="color: #facc15; margin: 0; flex-grow: 1; text-align: center; font-size: 22px; padding-right: 46px;">🏆 Palmarès</h2>
+        </div>
+        <div id="general-leaderboard-modal">
+            <div id="gl-loading-text" style="color: white;">Chargement des scores...</div>
+            <div id="general-leaderboard-list" style="width: 100%;"></div>
+        </div>
+    </div>
+
+    <!-- Pause Countdown Overlay -->
+    <div id="pauseCountdown" class="ui-layer hidden" style="background: rgba(15, 23, 42, 0.45); z-index: 50; backdrop-filter: none; -webkit-backdrop-filter: none; pointer-events: none;">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div id="countdownNum" class="count-pulse" style="font-size: 96px; font-weight: 900; color: #facc15; text-shadow: 0 4px 25px rgba(0,0,0,0.9); line-height: 1;">3</div>
+            <div style="font-size: 16px; font-weight: bold; color: #e2e8f0; margin-top: 14px; text-shadow: 0 2px 6px #000; letter-spacing: 0.5px;">Reprise de la partie...</div>
+        </div>
+    </div>
+
+    <!-- Settings / Pause Modal -->
+    <div id="settingsScreen" class="ui-layer hidden">
+        <div style="width: 90%; max-width: 380px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <button class="back-btn" id="closeSettingsBtn">⬅</button>
+            <h2 id="settingsTitle" style="color: #facc15; margin: 0; flex-grow: 1; text-align: center; font-size: 20px; padding-right: 46px;">⚙️ Paramètres</h2>
+        </div>
+        <button id="resumeGameBtn" class="hidden" style="width: 90%; max-width: 380px; background: #22c55e !important; border: 3px solid #16a34a !important; color: white !important; font-size: 16px !important; padding: 12px !important; margin: 0 0 12px 0 !important; border-radius: 12px !important; font-weight: 800; text-transform: uppercase;">▶️ REPRENDRE LA PARTIE</button>
+        <div id="settings-modal">
+            <div class="setting-row">
+                <span>Vibrations (Haptiques)</span>
+                <input type="checkbox" id="settingHaptics" checked style="width: 20px; height: 20px; accent-color: #facc15;">
+            </div>
+            <div class="setting-row">
+                <span>Musique Mario</span>
+                <input type="checkbox" id="settingMusic" checked style="width: 20px; height: 20px; accent-color: #facc15;">
+            </div>
+            <div class="setting-row">
+                <span>Effets sonores (SFX)</span>
+                <input type="checkbox" id="settingSfx" checked style="width: 20px; height: 20px; accent-color: #facc15;">
+            </div>
+            <!-- Options serveur & API masquées pour l'utilisateur final -->
+            <div id="developerSettings" class="hidden">
+                <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+                    <span>Serveur Multijoueur WebSocket</span>
+                    <div style="display:flex; width:100%; gap:6px;">
+                        <input type="text" id="settingWsUrl" class="setting-input" style="flex:1;" placeholder="ws://192.168.1.2:3000">
+                        <button id="testWsBtn" style="margin:0; font-size:12px; padding:6px 12px; border-radius:8px; text-transform:none; flex-shrink:0;">Tester</button>
+                    </div>
+                    <span id="testWsResult" style="font-size:11px; margin-top:2px;"></span>
+                </div>
+                <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+                    <span>URL API Classement OVH</span>
+                    <input type="text" id="settingApiUrl" class="setting-input" style="width: 100%;" placeholder="api.php">
+                </div>
+            </div>
+            <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #334155; font-size: 11px; color: #94a3b8; line-height: 1.4; text-align: center;">
+                1 Salon unique par niveau (Facile, Normal, Dur, Hardcore).<br>
+                Tous les joueurs connectés au même niveau jouent sur la même map !
+            </div>
+        </div>
+    </div>
+
+    <!-- Online Players Modal -->
+    <div id="onlinePlayersScreen" class="ui-layer hidden">
+        <div style="width: 90%; max-width: 380px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <button class="back-btn" id="closeOnlinePlayersBtn">⬅</button>
+            <h2 id="onlinePlayersTitle" style="color: #facc15; margin: 0; flex-grow: 1; text-align: center; font-size: 20px; padding-right: 46px;">👥 Joueurs en ligne</h2>
+        </div>
+        <div id="onlinePlayersList" style="background: #1e293b; width: 90%; max-width: 380px; max-height: 60vh; border-radius: 12px; border: 3px solid #475569; padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto;">
+            <div style="color: #94a3b8; font-size: 14px; font-weight: bold; text-align: center; padding: 24px 12px; line-height: 1.6;">
+                👤 Vous seul êtes en ligne actuellement<br>
+                <span style="font-size: 12px; font-weight: normal; color: #64748b;">Aucun autre joueur connecté pour le moment.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Partner Banner -->
+    <div id="partner-box">
+        <div class="partner-content">
+            <div class="partner-icon">💼</div>
+            <div class="partner-text">
+                <span class="partner-title">Philippot Consulting</span>
+                <span class="partner-desc">L'expertise à votre service.</span>
+            </div>
+        </div>
+        <div class="partner-actions">
+            <a href="https://www.linkedin.com/in/agathe-philippot-7087ab180/" target="_blank" class="partner-btn" id="infoLink">Découvrir</a>
+            <button class="close-partner" id="closeBox">&times;</button>
+        </div>
+    </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
